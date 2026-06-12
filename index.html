@@ -3,155 +3,404 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Abri Brancken, Ph.D</title>
+  <title>Hot Takes Wall</title>
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg: #0d0d0f;
       --surface: #18181b;
+      --surface2: #1f1f23;
       --border: #27272a;
       --text: #f4f4f5;
       --muted: #a1a1aa;
       --accent: #6366f1;
       --accent-hover: #818cf8;
+      --agree: #22c55e;
+      --disagree: #ef4444;
+      --spicy: #f97316;
     }
 
     body {
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      padding: 2rem 1rem 4rem;
     }
 
-    .card {
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #f97316, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.4rem;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    /* Form */
+    .form-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 1.25rem;
-      padding: 3rem 2.5rem;
-      max-width: 480px;
-      width: 100%;
-      text-align: center;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
     }
 
-    .avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
+    .form-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.75rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1.5;
+      padding: 0.75rem 1rem;
+      resize: none;
+      outline: none;
+      transition: border-color 0.15s;
+      height: 90px;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    .char-counter {
+      text-align: right;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      margin-bottom: 0.75rem;
+      transition: color 0.15s;
+    }
+
+    .char-counter.over { color: var(--disagree); }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    select {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.65rem 0.9rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    select:focus { border-color: var(--accent); }
+
+    button[type="submit"] {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 0.6rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.65rem 1.4rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button[type="submit"]:hover { background: var(--accent-hover); }
+    button[type="submit"]:active { transform: scale(0.97); }
+    button[type="submit"]:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* Takes */
+    .takes-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      font-weight: 700;
-      color: #fff;
-      margin: 0 auto 1.5rem;
-      letter-spacing: -1px;
+      justify-content: space-between;
+      margin-bottom: 1rem;
     }
 
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.5rem;
-    }
-
-    .role {
-      font-size: 0.9rem;
-      color: var(--accent-hover);
-      font-weight: 500;
-      margin-bottom: 1.25rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .bio {
+    .takes-header span {
+      font-size: 0.8rem;
       color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.7;
-      margin-bottom: 2rem;
     }
 
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin-bottom: 2rem;
-    }
-
-    .links {
+    .filter-row {
       display: flex;
-      gap: 1rem;
-      justify-content: center;
+      gap: 0.5rem;
       flex-wrap: wrap;
+      margin-bottom: 1.25rem;
     }
 
-    .link-btn {
-      display: inline-flex;
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2rem;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent-hover); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .takes-list { display: flex; flex-direction: column; gap: 1rem; }
+
+    .take-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.9rem;
+      padding: 1.25rem 1.25rem 1rem;
+      animation: slideIn 0.25s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .take-meta {
+      display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.6rem 1.25rem;
-      border-radius: 0.6rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      text-decoration: none;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-      border: 1px solid var(--border);
-      color: var(--text);
-      background: transparent;
+      margin-bottom: 0.65rem;
     }
 
-    .link-btn:hover {
-      border-color: var(--accent);
+    .tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 2rem;
+      background: rgba(99,102,241,0.15);
       color: var(--accent-hover);
-      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99,102,241,0.25);
     }
 
-    .link-btn svg {
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
+    .take-text {
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .reactions {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .reaction-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2rem;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .reaction-btn:hover { transform: scale(1.07); }
+    .reaction-btn:active { transform: scale(0.95); }
+
+    .reaction-btn.agree:hover,
+    .reaction-btn.agree.active   { background: rgba(34,197,94,0.12); border-color: var(--agree); color: var(--agree); }
+    .reaction-btn.disagree:hover,
+    .reaction-btn.disagree.active{ background: rgba(239,68,68,0.12); border-color: var(--disagree); color: var(--disagree); }
+    .reaction-btn.spicy:hover,
+    .reaction-btn.spicy.active   { background: rgba(249,115,22,0.12); border-color: var(--spicy); color: var(--spicy); }
+
+    .reaction-btn .count { font-weight: 600; min-width: 1ch; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 3rem 1rem;
+      font-size: 0.95rem;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="avatar">AB</div>
+  <div class="container">
+    <header>
+      <h1>🔥 Hot Takes Wall</h1>
+      <p>Drop your spiciest opinions. The crowd will judge.</p>
+    </header>
 
-    <h1>Abri Brancken, Ph.D</h1>
-    <p class="role">Pastor · Shiloh Ministries &amp; Fellowship, New Zealand</p>
+    <div class="form-card">
+      <h2>Submit a take</h2>
+      <textarea id="takeInput" placeholder="Your hottest take goes here…" maxlength="120"></textarea>
+      <div class="char-counter"><span id="charCount">0</span> / 120</div>
+      <div class="form-row">
+        <select id="tagSelect">
+          <option value="Tech">💻 Tech</option>
+          <option value="Food">🍕 Food</option>
+          <option value="Movies">🎬 Movies</option>
+          <option value="Sports">⚽ Sports</option>
+          <option value="Music">🎵 Music</option>
+          <option value="Life">🌍 Life</option>
+          <option value="AI">🤖 AI</option>
+          <option value="Other">💬 Other</option>
+        </select>
+        <button type="submit" id="submitBtn" disabled>Drop it 🔥</button>
+      </div>
+    </div>
 
-    <p class="bio">
-      Pastor and author with over three decades of experience in ecclesiastical
-      leadership and biblical literacy. Founder of Shiloh Ministries and Fellowship
-      in New Zealand, passionate about equipping believers through sound biblical
-      teaching and practical discipleship. Author of <em>How Your Words Affect Your Life</em>.
-    </p>
+    <div class="takes-header">
+      <strong id="takeCount">0 takes</strong>
+      <span>click a reaction to vote</span>
+    </div>
 
-    <hr class="divider" />
+    <div class="filter-row" id="filterRow">
+      <button class="filter-btn active" data-tag="All">All</button>
+    </div>
 
-    <div class="links">
-      <a class="link-btn" href="https://www.linkedin.com/in/abribrancken/" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.447 20.452H17.21v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.982V9h3.104v1.561h.046c.434-.822 1.492-1.689 3.073-1.689 3.287 0 3.894 2.163 3.894 4.977v6.603zM5.337 7.433a1.8 1.8 0 1 1 0-3.601 1.8 1.8 0 0 1 0 3.601zm1.602 13.019H3.733V9h3.206v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-        </svg>
-        LinkedIn
-      </a>
-
-      <a class="link-btn" href="https://github.com/brancken" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-        </svg>
-        GitHub
-      </a>
+    <div class="takes-list" id="takesList">
+      <div class="empty">No takes yet. Be the first to drop one.</div>
     </div>
   </div>
+
+  <script>
+    const STORAGE_KEY = 'hot-takes-v1';
+    let takes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let activeFilter = 'All';
+
+    const takeInput  = document.getElementById('takeInput');
+    const charCount  = document.getElementById('charCount');
+    const submitBtn  = document.getElementById('submitBtn');
+    const takesList  = document.getElementById('takesList');
+    const takeCount  = document.getElementById('takeCount');
+    const tagSelect  = document.getElementById('tagSelect');
+    const filterRow  = document.getElementById('filterRow');
+
+    takeInput.addEventListener('input', () => {
+      const len = takeInput.value.length;
+      charCount.textContent = len;
+      charCount.parentElement.classList.toggle('over', len >= 120);
+      submitBtn.disabled = len === 0;
+    });
+
+    submitBtn.addEventListener('click', () => {
+      const text = takeInput.value.trim();
+      if (!text) return;
+      const take = {
+        id: Date.now(),
+        text,
+        tag: tagSelect.value,
+        reactions: { agree: 0, disagree: 0, spicy: 0 }
+      };
+      takes.unshift(take);
+      save();
+      takeInput.value = '';
+      charCount.textContent = '0';
+      charCount.parentElement.classList.remove('over');
+      submitBtn.disabled = true;
+      renderFilters();
+      renderTakes();
+    });
+
+    function react(id, type) {
+      const take = takes.find(t => t.id === id);
+      if (!take) return;
+      take.reactions[type]++;
+      save();
+      renderTakes();
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(takes));
+    }
+
+    function renderFilters() {
+      const tags = ['All', ...new Set(takes.map(t => t.tag))];
+      filterRow.innerHTML = tags.map(tag =>
+        `<button class="filter-btn${tag === activeFilter ? ' active' : ''}" data-tag="${tag}">${tag}</button>`
+      ).join('');
+      filterRow.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeFilter = btn.dataset.tag;
+          renderFilters();
+          renderTakes();
+        });
+      });
+    }
+
+    function renderTakes() {
+      const filtered = activeFilter === 'All' ? takes : takes.filter(t => t.tag === activeFilter);
+      takeCount.textContent = `${takes.length} take${takes.length !== 1 ? 's' : ''}`;
+
+      if (filtered.length === 0) {
+        takesList.innerHTML = '<div class="empty">No takes for this tag yet.</div>';
+        return;
+      }
+
+      takesList.innerHTML = filtered.map(t => `
+        <div class="take-card">
+          <div class="take-meta"><span class="tag">${t.tag}</span></div>
+          <p class="take-text">${escHtml(t.text)}</p>
+          <div class="reactions">
+            <button class="reaction-btn agree" data-id="${t.id}" data-type="agree">
+              👍 <span class="count">${t.reactions.agree}</span>
+            </button>
+            <button class="reaction-btn disagree" data-id="${t.id}" data-type="disagree">
+              👎 <span class="count">${t.reactions.disagree}</span>
+            </button>
+            <button class="reaction-btn spicy" data-id="${t.id}" data-type="spicy">
+              🌶️ <span class="count">${t.reactions.spicy}</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      takesList.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.addEventListener('click', () => react(Number(btn.dataset.id), btn.dataset.type));
+      });
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    renderFilters();
+    renderTakes();
+  </script>
 </body>
 </html>
