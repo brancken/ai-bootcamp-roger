@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hot Takes Wall</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -50,9 +51,20 @@
       margin-top: 0.4rem;
     }
 
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: 6px;
+      vertical-align: middle;
+      transition: background 0.3s;
+    }
+    .status-dot.live { background: var(--agree); box-shadow: 0 0 6px var(--agree); }
+
     .container { max-width: 680px; margin: 0 auto; }
 
-    /* Form */
     .form-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -62,13 +74,12 @@
     }
 
     .form-card h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
     }
 
     textarea {
@@ -98,14 +109,9 @@
       margin-bottom: 0.75rem;
       transition: color 0.15s;
     }
-
     .char-counter.over { color: var(--disagree); }
 
-    .form-row {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
+    .form-row { display: flex; gap: 0.75rem; align-items: center; }
 
     select {
       flex: 1;
@@ -120,7 +126,6 @@
       cursor: pointer;
       transition: border-color 0.15s;
     }
-
     select:focus { border-color: var(--accent); }
 
     button[type="submit"] {
@@ -136,23 +141,17 @@
       transition: background 0.15s, transform 0.1s;
       white-space: nowrap;
     }
-
     button[type="submit"]:hover { background: var(--accent-hover); }
     button[type="submit"]:active { transform: scale(0.97); }
     button[type="submit"]:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-    /* Takes */
     .takes-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 1rem;
     }
-
-    .takes-header span {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
+    .takes-header span { font-size: 0.8rem; color: var(--muted); }
 
     .filter-row {
       display: flex;
@@ -172,7 +171,6 @@
       cursor: pointer;
       transition: all 0.15s;
     }
-
     .filter-btn:hover { border-color: var(--accent); color: var(--accent-hover); }
     .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
@@ -185,18 +183,12 @@
       padding: 1.25rem 1.25rem 1rem;
       animation: slideIn 0.25s ease;
     }
-
     @keyframes slideIn {
       from { opacity: 0; transform: translateY(-8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .take-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.65rem;
-    }
+    .take-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.65rem; }
 
     .tag {
       font-size: 0.72rem;
@@ -217,10 +209,7 @@
       margin-bottom: 1rem;
     }
 
-    .reactions {
-      display: flex;
-      gap: 0.6rem;
-    }
+    .reactions { display: flex; gap: 0.6rem; }
 
     .reaction-btn {
       display: flex;
@@ -237,17 +226,11 @@
       transition: all 0.15s;
       user-select: none;
     }
-
     .reaction-btn:hover { transform: scale(1.07); }
     .reaction-btn:active { transform: scale(0.95); }
-
-    .reaction-btn.agree:hover,
-    .reaction-btn.agree.active   { background: rgba(34,197,94,0.12); border-color: var(--agree); color: var(--agree); }
-    .reaction-btn.disagree:hover,
-    .reaction-btn.disagree.active{ background: rgba(239,68,68,0.12); border-color: var(--disagree); color: var(--disagree); }
-    .reaction-btn.spicy:hover,
-    .reaction-btn.spicy.active   { background: rgba(249,115,22,0.12); border-color: var(--spicy); color: var(--spicy); }
-
+    .reaction-btn.agree:hover    { background: rgba(34,197,94,0.12); border-color: var(--agree); color: var(--agree); }
+    .reaction-btn.disagree:hover { background: rgba(239,68,68,0.12); border-color: var(--disagree); color: var(--disagree); }
+    .reaction-btn.spicy:hover    { background: rgba(249,115,22,0.12); border-color: var(--spicy); color: var(--spicy); }
     .reaction-btn .count { font-weight: 600; min-width: 1ch; }
 
     .empty {
@@ -256,14 +239,27 @@
       padding: 3rem 1rem;
       font-size: 0.95rem;
     }
+
+    .error-banner {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 0.6rem;
+      color: var(--disagree);
+      font-size: 0.85rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>🔥 Hot Takes Wall</h1>
-      <p>Drop your spiciest opinions. The crowd will judge.</p>
+      <p><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting…</span></p>
     </header>
+
+    <div class="error-banner" id="errorBanner"></div>
 
     <div class="form-card">
       <h2>Submit a take</h2>
@@ -286,7 +282,7 @@
 
     <div class="takes-header">
       <strong id="takeCount">0 takes</strong>
-      <span>click a reaction to vote</span>
+      <span>updates live · click a reaction to vote</span>
     </div>
 
     <div class="filter-row" id="filterRow">
@@ -294,13 +290,17 @@
     </div>
 
     <div class="takes-list" id="takesList">
-      <div class="empty">No takes yet. Be the first to drop one.</div>
+      <div class="empty">Connecting to database…</div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = 'hot-takes-v1';
-    let takes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const SUPABASE_URL = 'https://xuntfcegodwlicecffsy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1bnRmY2Vnb2R3bGljZWNmZnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODcwMTksImV4cCI6MjA5Njg2MzAxOX0.dvnmV2-TP-O7Xuib-WZq2qntDDvKaHpNYkopcpKNrik';
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let takes = [];
     let activeFilter = 'All';
 
     const takeInput  = document.getElementById('takeInput');
@@ -310,6 +310,20 @@
     const takeCount  = document.getElementById('takeCount');
     const tagSelect  = document.getElementById('tagSelect');
     const filterRow  = document.getElementById('filterRow');
+    const statusDot  = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const errorBanner = document.getElementById('errorBanner');
+
+    function setStatus(live) {
+      statusDot.className = 'status-dot' + (live ? ' live' : '');
+      statusText.textContent = live ? 'Live' : 'Reconnecting…';
+    }
+
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.style.display = 'block';
+      setTimeout(() => errorBanner.style.display = 'none', 4000);
+    }
 
     takeInput.addEventListener('input', () => {
       const len = takeInput.value.length;
@@ -318,35 +332,49 @@
       submitBtn.disabled = len === 0;
     });
 
-    submitBtn.addEventListener('click', () => {
+    submitBtn.addEventListener('click', async () => {
       const text = takeInput.value.trim();
       if (!text) return;
-      const take = {
-        id: Date.now(),
-        text,
-        tag: tagSelect.value,
-        reactions: { agree: 0, disagree: 0, spicy: 0 }
-      };
-      takes.unshift(take);
-      save();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Posting…';
+
+      const { error } = await db.from('takes').insert({ text, tag: tagSelect.value });
+
+      submitBtn.textContent = 'Drop it 🔥';
+      if (error) {
+        showError('Failed to post: ' + error.message);
+        submitBtn.disabled = false;
+        return;
+      }
       takeInput.value = '';
       charCount.textContent = '0';
       charCount.parentElement.classList.remove('over');
-      submitBtn.disabled = true;
-      renderFilters();
-      renderTakes();
     });
 
-    function react(id, type) {
+    async function react(id, type) {
       const take = takes.find(t => t.id === id);
       if (!take) return;
-      take.reactions[type]++;
-      save();
+      take[`${type}_count`]++;
       renderTakes();
+
+      const { error } = await db.rpc('increment_reaction', { take_id: id, reaction: type });
+      if (error) {
+        take[`${type}_count`]--;
+        renderTakes();
+        showError('Reaction failed: ' + error.message);
+      }
     }
 
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(takes));
+    async function loadTakes() {
+      const { data, error } = await db
+        .from('takes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) { showError('Could not load takes: ' + error.message); return; }
+      takes = data;
+      renderFilters();
+      renderTakes();
     }
 
     function renderFilters() {
@@ -368,39 +396,56 @@
       takeCount.textContent = `${takes.length} take${takes.length !== 1 ? 's' : ''}`;
 
       if (filtered.length === 0) {
-        takesList.innerHTML = '<div class="empty">No takes for this tag yet.</div>';
+        takesList.innerHTML = takes.length === 0
+          ? '<div class="empty">No takes yet. Be the first to drop one.</div>'
+          : '<div class="empty">No takes for this tag yet.</div>';
         return;
       }
 
       takesList.innerHTML = filtered.map(t => `
         <div class="take-card">
-          <div class="take-meta"><span class="tag">${t.tag}</span></div>
+          <div class="take-meta"><span class="tag">${escHtml(t.tag)}</span></div>
           <p class="take-text">${escHtml(t.text)}</p>
           <div class="reactions">
-            <button class="reaction-btn agree" data-id="${t.id}" data-type="agree">
-              👍 <span class="count">${t.reactions.agree}</span>
+            <button class="reaction-btn agree"    data-id="${t.id}" data-type="agree">
+              👍 <span class="count">${t.agree_count}</span>
             </button>
             <button class="reaction-btn disagree" data-id="${t.id}" data-type="disagree">
-              👎 <span class="count">${t.reactions.disagree}</span>
+              👎 <span class="count">${t.disagree_count}</span>
             </button>
-            <button class="reaction-btn spicy" data-id="${t.id}" data-type="spicy">
-              🌶️ <span class="count">${t.reactions.spicy}</span>
+            <button class="reaction-btn spicy"    data-id="${t.id}" data-type="spicy">
+              🌶️ <span class="count">${t.spicy_count}</span>
             </button>
           </div>
         </div>
       `).join('');
 
       takesList.querySelectorAll('.reaction-btn').forEach(btn => {
-        btn.addEventListener('click', () => react(Number(btn.dataset.id), btn.dataset.type));
+        btn.addEventListener('click', () => react(btn.dataset.id, btn.dataset.type));
       });
     }
 
     function escHtml(str) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    renderFilters();
-    renderTakes();
+    // Real-time subscription — updates the wall live for all visitors
+    db.channel('takes-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'takes' }, payload => {
+        takes.unshift(payload.new);
+        renderFilters();
+        renderTakes();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'takes' }, payload => {
+        const idx = takes.findIndex(t => t.id === payload.new.id);
+        if (idx !== -1) takes[idx] = payload.new;
+        renderTakes();
+      })
+      .subscribe(status => setStatus(status === 'SUBSCRIBED'));
+
+    loadTakes();
   </script>
 </body>
 </html>
