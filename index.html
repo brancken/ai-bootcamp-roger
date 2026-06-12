@@ -250,9 +250,22 @@
       margin-bottom: 1rem;
       display: none;
     }
+
+    #bgCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .container { position: relative; z-index: 1; }
   </style>
 </head>
 <body>
+  <canvas id="bgCanvas"></canvas>
   <div class="container">
     <header>
       <h1>🔥 Hot Takes Wall</h1>
@@ -446,6 +459,197 @@
       .subscribe(status => setStatus(status === 'SUBSCRIBED'));
 
     loadTakes();
+  </script>
+
+  <script>
+    /* ── Cow & Carrot background animation ── */
+    const canvas = document.getElementById('bgCanvas');
+    const ctx    = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Carrot {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x     = 60 + Math.random() * (canvas.width  - 120);
+        this.y     = canvas.height * 0.55 + Math.random() * canvas.height * 0.38;
+        this.size  = 26 + Math.random() * 14;
+        this.scale = 1;
+        this.eaten = false;
+      }
+      shrink() {
+        this.scale = Math.max(0, this.scale - 0.06);
+        if (this.scale === 0) this.eaten = true;
+      }
+      draw() {
+        if (this.eaten) return;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.scale, this.scale);
+        ctx.globalAlpha = this.scale;
+        ctx.font = this.size + 'px serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🥕', 0, 0);
+        ctx.restore();
+      }
+    }
+
+    const WALK = 'walk', APPROACH = 'approach', EAT = 'eat';
+
+    class Cow {
+      constructor(startX) {
+        this.size    = 44 + Math.random() * 18;
+        this.speed   = 0.55 + Math.random() * 1.1;
+        this.bob     = Math.random() * Math.PI * 2;
+        this.parts   = [];
+        this._place(startX);
+      }
+      _place(x) {
+        this.x      = x ?? -90;
+        this.baseY  = canvas.height * 0.62 + (Math.random() - 0.5) * canvas.height * 0.28;
+        this.y      = this.baseY;
+        this.facing = 1;
+        this.state  = WALK;
+        this.target = null;
+        this.eatT   = 0;
+      }
+      _findCarrot(carrots) {
+        let best = null, bd = Infinity;
+        for (const c of carrots) {
+          if (c.eaten || c.scale < 0.4) continue;
+          const dx = c.x - this.x, dy = c.y - this.baseY;
+          const d  = Math.sqrt(dx*dx + dy*dy);
+          if (d < 220 && d < bd) { best = c; bd = d; }
+        }
+        return best;
+      }
+      _puff() {
+        for (let i = 0; i < 5; i++) {
+          this.parts.push({
+            x: this.x, y: this.y - this.size * 0.25,
+            vx: (Math.random() - 0.5) * 3.5,
+            vy: -Math.random() * 2.5 - 0.5,
+            life: 1,
+            glyph: ['✨','💚','🌿'][Math.floor(Math.random()*3)]
+          });
+        }
+      }
+      update(carrots) {
+        const t = Date.now() / 1000;
+
+        // age particles
+        for (const p of this.parts) {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.life -= 0.028;
+        }
+        this.parts = this.parts.filter(p => p.life > 0);
+
+        if (this.state === WALK) {
+          if (!this.target) this.target = this._findCarrot(carrots);
+          if (this.target && !this.target.eaten) {
+            this.state = APPROACH;
+          } else {
+            this.x += this.speed;
+            this.facing = 1;
+            this.y = this.baseY + Math.sin(t * 2.2 + this.bob) * 2;
+          }
+
+        } else if (this.state === APPROACH) {
+          if (!this.target || this.target.eaten) { this.target = null; this.state = WALK; return; }
+          const dx = this.target.x - this.x;
+          const dy = this.target.y - this.baseY;
+          this.facing = dx > 0 ? 1 : -1;
+          if (Math.abs(dx) < 14) {
+            this.state  = EAT;
+            this.eatT   = 90;
+            this.baseY += dy * 0.4;
+          } else {
+            const d = Math.sqrt(dx*dx + dy*dy);
+            this.x     += (dx / d) * this.speed * 1.6;
+            this.baseY += (dy / d) * 0.6;
+            this.y      = this.baseY + Math.sin(t * 3 + this.bob) * 2;
+          }
+
+        } else if (this.state === EAT) {
+          this.eatT--;
+          this.y = this.baseY + Math.sin(t * 9) * 5;
+          if (this.target && !this.target.eaten) {
+            this.target.shrink();
+            if (this.eatT % 12 === 0) this._puff();
+          }
+          if (this.eatT <= 0) {
+            this._puff();
+            this.state  = WALK;
+            this.target = null;
+          }
+        }
+
+        if (this.x > canvas.width + 120) this._place();
+      }
+      draw() {
+        for (const p of this.parts) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.life) * 0.85;
+          ctx.font = '15px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.glyph, p.x, p.y);
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        if (this.facing === -1) ctx.scale(-1, 1);
+        ctx.font = this.size + 'px serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐄', 0, 0);
+
+        if (this.state === EAT && this.eatT > 30) {
+          ctx.font = '20px serif';
+          ctx.fillText('😋', this.facing * (this.size * 0.65), -this.size * 0.55);
+        }
+        ctx.restore();
+      }
+    }
+
+    // Spawn cows spread across initial screen
+    const cows = Array.from({ length: 4 }, (_, i) =>
+      new Cow(80 + (canvas.width / 4) * i)
+    );
+
+    const carrots = Array.from({ length: 11 }, () => new Carrot());
+
+    function maybeSpawnCarrot() {
+      const alive = carrots.filter(c => !c.eaten).length;
+      if (alive < 11) {
+        const dead = carrots.find(c => c.eaten);
+        if (dead) dead.reset(); else carrots.push(new Carrot());
+      }
+    }
+    setInterval(maybeSpawnCarrot, 2200);
+
+    function drawGrassGlow() {
+      const g = ctx.createLinearGradient(0, canvas.height * 0.65, 0, canvas.height);
+      g.addColorStop(0, 'rgba(34,197,94,0)');
+      g.addColorStop(1, 'rgba(34,197,94,0.06)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, canvas.height * 0.65, canvas.width, canvas.height * 0.35);
+    }
+
+    (function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrassGlow();
+      for (const c of carrots) c.draw();
+      for (const cow of cows) { cow.update(carrots); cow.draw(); }
+      requestAnimationFrame(loop);
+    })();
   </script>
 </body>
 </html>
